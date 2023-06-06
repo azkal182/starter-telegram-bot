@@ -1,168 +1,118 @@
-import { Bot, InlineKeyboard, webhookCallback } from "grammy";
+
+import { Bot, InlineKeyboard, webhookCallback,session,Context } from "grammy";
+import getData from './dompul.js';
+import { type Conversation,
+  type ConversationFlavor,conversations,
+  createConversation } from "@grammyjs/conversations";
+import { MongoClient } from "mongodb";
 import { chunk } from "lodash";
 import express from "express";
-import { applyTextEffect, Variant } from "./textEffects";
 
-import type { Variant as TextEffectVariant } from "./textEffects";
+type MyContext = Context & ConversationFlavor;
+type MyConversation = Conversation<MyContext>;
+
 
 // Create a bot using the Telegram token
-const bot = new Bot(process.env.TELEGRAM_TOKEN || "");
+const bot = new Bot(process.env.TELEGRAM_TOKEN || "5824625543:AAEslB26tupftKCDQTs0OULDa1uYWxv6XfM");
 
-// Handle the /yo command to greet the user
-bot.command("yo", (ctx) => ctx.reply(`Yo ${ctx.from?.username}`));
+const uri = 'mongodb://localhost:27017';
+const dbName = 'sidompul_bot';
 
-// Handle the /effect command to apply text effects using an inline keyboard
-type Effect = { code: TextEffectVariant; label: string };
-const allEffects: Effect[] = [
-  {
-    code: "w",
-    label: "Monospace",
+bot.use(session({
+  initial() {
+    // return empty object for now
+    return {};
   },
-  {
-    code: "b",
-    label: "Bold",
-  },
-  {
-    code: "i",
-    label: "Italic",
-  },
-  {
-    code: "d",
-    label: "Doublestruck",
-  },
-  {
-    code: "o",
-    label: "Circled",
-  },
-  {
-    code: "q",
-    label: "Squared",
-  },
-];
+}));
+bot.use(conversations());
+bot.use(createConversation(addAccount, 'add-account'))
 
-const effectCallbackCodeAccessor = (effectCode: TextEffectVariant) =>
-  `effect-${effectCode}`;
+async function addAccount(conversation: MyConversation, ctx: MyContext) {
+  //await ctx.deleteMessage()
+  await ctx.reply("Masukan nama akun");
+  const name = await conversation.wait();
+  //@ts-ignore
+  ctx.session.name = name.message.text
+  await ctx.reply(`Masukan nomor akun, ${name.message.text}!`);
+  const num = await conversation.wait();
+   //@ts-ignore
+   ctx.session.num = num.message.text
 
-const effectsKeyboardAccessor = (effectCodes: string[]) => {
-  const effectsAccessor = (effectCodes: string[]) =>
-    effectCodes.map((code) =>
-      allEffects.find((effect) => effect.code === code)
-    );
-  const effects = effectsAccessor(effectCodes);
+  // Menghubungkan ke server MongoDB
+  const client = await MongoClient.connect(uri);
+  const db = client.db(dbName);
 
-  const keyboard = new InlineKeyboard();
-  const chunkedEffects = chunk(effects, 3);
-  for (const effectsChunk of chunkedEffects) {
-    for (const effect of effectsChunk) {
-      effect &&
-        keyboard.text(effect.label, effectCallbackCodeAccessor(effect.code));
-    }
-    keyboard.row();
-  }
+  // Simpan name dan number ke dalam database berdasarkan ID user
+  await saveNumber(db, ctx.from.id, name.message.text, num.message.text);
 
-  return keyboard;
-};
-
-const textEffectResponseAccessor = (
-  originalText: string,
-  modifiedText?: string
-) =>
-  `Original: ${originalText}` +
-  (modifiedText ? `\nModified: ${modifiedText}` : "");
-
-const parseTextEffectResponse = (
-  response: string
-): {
-  originalText: string;
-  modifiedText?: string;
-} => {
-  const originalText = (response.match(/Original: (.*)/) as any)[1];
-  const modifiedTextMatch = response.match(/Modified: (.*)/);
-
-  let modifiedText;
-  if (modifiedTextMatch) modifiedText = modifiedTextMatch[1];
-
-  if (!modifiedTextMatch) return { originalText };
-  else return { originalText, modifiedText };
-};
-
-bot.command("effect", (ctx) =>
-  ctx.reply(textEffectResponseAccessor(ctx.match), {
-    reply_markup: effectsKeyboardAccessor(
-      allEffects.map((effect) => effect.code)
-    ),
-  })
-);
-
-// Handle inline queries
-const queryRegEx = /effect (monospace|bold|italic) (.*)/;
-bot.inlineQuery(queryRegEx, async (ctx) => {
-  const fullQuery = ctx.inlineQuery.query;
-  const fullQueryMatch = fullQuery.match(queryRegEx);
-  if (!fullQueryMatch) return;
-
-  const effectLabel = fullQueryMatch[1];
-  const originalText = fullQueryMatch[2];
-
-  const effectCode = allEffects.find(
-    (effect) => effect.label.toLowerCase() === effectLabel.toLowerCase()
-  )?.code;
-  const modifiedText = applyTextEffect(originalText, effectCode as Variant);
-
-  await ctx.answerInlineQuery(
-    [
-      {
-        type: "article",
-        id: "text-effect",
-        title: "Text Effects",
-        input_message_content: {
-          message_text: `Original: ${originalText}
-Modified: ${modifiedText}`,
-          parse_mode: "HTML",
-        },
-        reply_markup: new InlineKeyboard().switchInline("Share", fullQuery),
-        url: "http://t.me/EludaDevSmarterBot",
-        description: "Create stylish Unicode text, all within Telegram.",
-      },
-    ],
-    { cache_time: 30 * 24 * 3600 } // one month in seconds
-  );
-});
-
-// Return empty result list for other queries.
-bot.on("inline_query", (ctx) => ctx.answerInlineQuery([]));
-
-// Handle text effects from the effect keyboard
-for (const effect of allEffects) {
-  const allEffectCodes = allEffects.map((effect) => effect.code);
-
-  bot.callbackQuery(effectCallbackCodeAccessor(effect.code), async (ctx) => {
-    const { originalText } = parseTextEffectResponse(ctx.msg?.text || "");
-    const modifiedText = applyTextEffect(originalText, effect.code);
-
-    await ctx.editMessageText(
-      textEffectResponseAccessor(originalText, modifiedText),
-      {
-        reply_markup: effectsKeyboardAccessor(
-          allEffectCodes.filter((code) => code !== effect.code)
-        ),
-      }
-    );
-  });
+  // Menutup koneksi ke server MongoDB
+  client.close();
+  await ctx.reply('akun berhasil disimpan ')
+  //await ctx.reply(`akun, ${name.message.text} - ${num.message.text}!`);
+  ctx.session = {}
+  await showMenu(ctx)
 }
 
-// Handle the /about command
-const aboutUrlKeyboard = new InlineKeyboard().url(
-  "Host your own bot for free.",
-  "https://cyclic.sh/"
-);
+bot.command("start", async (ctx) => {
+  const inlineKeyboard = new InlineKeyboard();
 
+  await ctx.api.sendChatAction(ctx.chat.id, 'typing');
+
+  const client = await MongoClient.connect(uri);
+  const db = client.db(dbName);
+
+  // Mendapatkan daftar nomor pengguna dari koleksi "numbers"
+  const numbers = await getNumbers(db, ctx.from.id);
+  numbers.forEach((option) => {
+    inlineKeyboard.text(option.name, '/number_'+option.number).row(); // Menambahkan tombol dengan teks dan nilai yang sama
+  });
+  inlineKeyboard.text('➕ Tambah ', 'tambah')
+  inlineKeyboard.text('❌  Hapus ', 'hapus')
+  let list = ''
+
+  numbers.map((number, i) => {
+    list += `${i+1}. ${number.name} - ${number.number}\n`
+  })
+
+  await ctx.reply(`ID : ${ctx.from.id}\n\nDaftar Nomor Tersimpan: \n${list}`, {
+    reply_markup: inlineKeyboard
+  })
+
+  console.log(numbers)
+});
+
+
+
+
+
+
+bot.callbackQuery("tambah", async (ctx) => {
+   //@ts-ignore
+  await ctx.conversation.enter("add-account")
+  await ctx.deleteMessage()
+  await ctx.answerCallbackQuery()
+});
+
+
+bot.callbackQuery(/^\/number_(.*)$/, async (ctx) => {
+  const number = ctx.match[1]
+  const data = await getData(number)
+  console.log(data)
+  await sendResultToUser(ctx, data.packageInfo)
+  await ctx.deleteMessage()
+  //await ctx.reply("pilih nomor " + number)
+  await ctx.answerCallbackQuery()
+});
 // Suggest commands in the menu
 bot.api.setMyCommands([
   { command: "yo", description: "Be greeted by the bot" },
   {
     command: "effect",
     description: "Apply text effects on the text. (usage: /effect [text])",
+  },
+    {
+    command: "menu",
+    description: "show menu",
   },
 ]);
 
@@ -174,14 +124,115 @@ I'm powered by Cyclic, the next-generation serverless computing platform.
 /yo - Be greeted by me
 /effect [text] - Show a keyboard to apply text effects to [text]`;
 
-const replyWithIntro = (ctx: any) =>
-  ctx.reply(introductionMessage, {
-    reply_markup: aboutUrlKeyboard,
-    parse_mode: "HTML",
+bot.command("menu", async (ctx)=>{
+  await showMenu(ctx)
+})
+
+bot.command("setMenu", async (ctx)=>{
+  await bot.api.setMyCommands([
+  { command: "yo", description: "Be greeted by the bot" },
+  {
+    command: "effect",
+    description: "Apply text effects on the text. (usage: /effect [text])",
+  },
+    {
+    command: "menu",
+    description: "show menu",
+  },
+]);
+})
+
+async function getNumbers(db,
+  userId) {
+  const collection = db.collection('numbers');
+  const result = await collection.find({
+    user_id: userId
+  }).toArray();
+  return result.map((doc) => doc);
+}
+
+
+async function saveNumber(db,
+  userId,
+  name,
+  number) {
+  const collection = db.collection('numbers');
+  await collection.insertOne({
+    user_id: userId,
+    name,
+    number
+  });
+}
+
+async function showMenu(ctx) {
+  const inlineKeyboard = new InlineKeyboard();
+
+  await ctx.api.sendChatAction(ctx.chat.id,
+    'typing');
+
+  const client = await MongoClient.connect(uri);
+  const db = client.db(dbName);
+
+  // Mendapatkan daftar nomor pengguna dari koleksi "numbers"
+  const numbers = await getNumbers(db,
+    ctx.from.id);
+  numbers.forEach((option) => {
+    inlineKeyboard.text(option.name, '/number_'+option.number).row(); // Menambahkan tombol dengan teks dan nilai yang sama
+  });
+  inlineKeyboard.text('➕ Tambah ',
+    'tambah')
+  inlineKeyboard.text('❌  Hapus ',
+    'hapus')
+  let list = ''
+
+  numbers.map((number, i) => {
+    list += `${i+1}. ${number.name} - ${number.number}\n`
+  })
+
+  await ctx.reply(`ID : ${ctx.from.id}\n\nDaftar Nomor Tersimpan: \n${list}`,
+    {
+      reply_markup: inlineKeyboard
+    })
+}
+
+
+function sendResultToUser(ctx, data) {
+  // Ubah format hasil menjadi pesan yang dapat dikirim ke pengguna
+  let message = '';
+  message += 'info Paket Aktif\n'
+
+  data.forEach((item,
+    index,
+    arr) => {
+    const name = item[0].packages.name
+    const expDate = item[0].packages.expDate.split(' ')[0]
+    message += `📦 Nama Paket: ${name}\n`;
+    message += `📅 Expired: ${expDate}\n`;
+    message += `===========================\n`;
+    const bname = item[0].benefits
+    bname.forEach((benefit, index, arr) => {
+      message += `⭐️ Benefit: ${benefit.bname}\n`;
+      message += `💙 Quota: ${benefit.quota}\n`;
+      message += `✅ Sisa Quota: ${benefit.remaining}\n`;
+      if (index !== arr.length - 1) {
+        message += "\n" // Menambahkan jarak dengan \n
+      }
+    });
+
+    if (index !== arr.length - 1) {
+      message += "\n" // Menambahkan jarak dengan \n
+    }
+
+    // message += `===========================\n\n`;
   });
 
-bot.command("start", replyWithIntro);
-bot.on("message", replyWithIntro);
+  // Kirim pesan ke pengguna
+  ctx.reply(message);
+  //console.log(message)
+}
+
+
+
 
 // Start the server
 if (process.env.NODE_ENV === "production") {
@@ -196,5 +247,6 @@ if (process.env.NODE_ENV === "production") {
   });
 } else {
   // Use Long Polling for development
+console.log('run locally')
   bot.start();
 }
