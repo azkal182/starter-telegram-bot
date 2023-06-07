@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "tsc && cpy \"src/**/*.js\" dist && cpy \"src/**/*.token\" dist",
+
     "start": "node dist/bot.js",
     "dev": "env-cmd ts-node-dev src/bot.ts",
     "test": "echo \"Error: no test specified\" && exit 1"

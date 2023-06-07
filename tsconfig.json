@@ -1,8 +1,11 @@
 {
+  
   "compilerOptions": {
+    "esModuleInterop": true,
     "module": "CommonJS",
-    "outDir": "dist"
+   "outDir": "./dist",
+    "rootDir": "./src"
   },
-  "include": ["src/bot.ts", "environment.d.ts"],
+  "include": ["src/**/*", "environment.d.ts"],
   "exclude": ["node_modules"]
 }
