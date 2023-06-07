@@ -164,7 +164,8 @@ if (nomer.startsWith("62")) {
     const errorMessage = data.result.errorMessage;
     console.log(`[${statusCode}] ${statusDescription}`);
     console.log(errorMessage);
-    process.exit(100);
+    return errorMessage
+    //process.exit(100);
   }
 }
 

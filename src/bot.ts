@@ -4,9 +4,10 @@ import getData from './dompul.js';
 import { type Conversation,
   type ConversationFlavor,conversations,
   createConversation } from "@grammyjs/conversations";
-import { MongoClient } from "mongodb";
+
 import { chunk } from "lodash";
 import express from "express";
+import {readData, addData, removeData} from "./redis.js"
 
 type MyContext = Context & ConversationFlavor;
 type MyConversation = Conversation<MyContext>;
@@ -15,8 +16,7 @@ type MyConversation = Conversation<MyContext>;
 // Create a bot using the Telegram token
 const bot = new Bot(process.env.TELEGRAM_TOKEN || "5824625543:AAEslB26tupftKCDQTs0OULDa1uYWxv6XfM");
 
-const uri = 'mongodb://localhost:27017';
-const dbName = 'sidompul_bot';
+
 
 bot.use(session({
   initial() {
@@ -38,47 +38,24 @@ async function addAccount(conversation: MyConversation, ctx: MyContext) {
    //@ts-ignore
    ctx.session.num = num.message.text
 
-  // Menghubungkan ke server MongoDB
-  const client = await MongoClient.connect(uri);
-  const db = client.db(dbName);
+  
 
   // Simpan name dan number ke dalam database berdasarkan ID user
-  await saveNumber(db, ctx.from.id, name.message.text, num.message.text);
+  
+  
+  await addData(ctx.from.id, {name: name.message.text, phone: num.message.text.replace(/[^\d]/g, '')});
 
   // Menutup koneksi ke server MongoDB
-  client.close();
+  
   await ctx.reply('akun berhasil disimpan ')
   //await ctx.reply(`akun, ${name.message.text} - ${num.message.text}!`);
   ctx.session = {}
   await showMenu(ctx)
 }
 
+
 bot.command("start", async (ctx) => {
-  const inlineKeyboard = new InlineKeyboard();
-
-  await ctx.api.sendChatAction(ctx.chat.id, 'typing');
-
-  const client = await MongoClient.connect(uri);
-  const db = client.db(dbName);
-
-  // Mendapatkan daftar nomor pengguna dari koleksi "numbers"
-  const numbers = await getNumbers(db, ctx.from.id);
-  numbers.forEach((option) => {
-    inlineKeyboard.text(option.name, '/number_'+option.number).row(); // Menambahkan tombol dengan teks dan nilai yang sama
-  });
-  inlineKeyboard.text('➕ Tambah ', 'tambah')
-  inlineKeyboard.text('❌  Hapus ', 'hapus')
-  let list = ''
-
-  numbers.map((number, i) => {
-    list += `${i+1}. ${number.name} - ${number.number}\n`
-  })
-
-  await ctx.reply(`ID : ${ctx.from.id}\n\nDaftar Nomor Tersimpan: \n${list}`, {
-    reply_markup: inlineKeyboard
-  })
-
-  console.log(numbers)
+  await showMenu(ctx)
 });
 
 
@@ -92,16 +69,57 @@ bot.callbackQuery("tambah", async (ctx) => {
   await ctx.deleteMessage()
   await ctx.answerCallbackQuery()
 });
+bot.callbackQuery("hapus", async (ctx) =>{
+  await ctx.deleteMessage()
+  await showMenuDelete(ctx)
+})
 
+bot.callbackQuery(/^\/remove_(.*)$/, async (ctx) => {
+  await ctx.deleteMessage()
+  const message = ctx.match[1].split('-')
+  const index = message[0]
+  const phone = message[1]
+  const inlineKeyboard = new InlineKeyboard().text('Hapus', `/confirm_${index}`).text('Batal', `/batal`)
+  await ctx.api.sendChatAction(ctx.chat.id, 'typing');
+  
+  console.log('index = ', index)
+  console.log('phone = ', phone)
+  
+  ctx.reply(`Apakah anda yakin akan menghapus akun dengan nomor - ${phone}`, {reply_markup:inlineKeyboard})
+})
+
+bot.callbackQuery(/^\/confirm_(.*)$/, async (ctx) => {
+  const index = ctx.match[1]
+  console.log(ctx.from.id)
+  console.log(index)
+  await ctx.deleteMessage()
+  try {
+    await removeData(ctx.from.id, index)
+    await ctx.reply('Akun berhasil dihapus')
+    await showMenu(ctx)
+  } catch (err) {
+    await ctx.reply('Gagal menghapus Akun!')
+  }
+})
+bot.callbackQuery('/batal', async (ctx)=>{
+  await ctx.deleteMessage()
+  await showMenu(ctx)
+})
 
 bot.callbackQuery(/^\/number_(.*)$/, async (ctx) => {
   const number = ctx.match[1]
   const data = await getData(number)
+  await ctx.deleteMessage()
+  if (data.packageInfo) {
   console.log(data)
   await sendResultToUser(ctx, data.packageInfo)
-  await ctx.deleteMessage()
-  //await ctx.reply("pilih nomor " + number)
-  await ctx.answerCallbackQuery()
+
+  } else {
+    
+  
+  await ctx.reply(data)
+  
+  }
 });
 // Suggest commands in the menu
 bot.api.setMyCommands([
@@ -142,57 +160,42 @@ bot.command("setMenu", async (ctx)=>{
 ]);
 })
 
-async function getNumbers(db,
-  userId) {
-  const collection = db.collection('numbers');
-  const result = await collection.find({
-    user_id: userId
-  }).toArray();
-  return result.map((doc) => doc);
-}
 
 
-async function saveNumber(db,
-  userId,
-  name,
-  number) {
-  const collection = db.collection('numbers');
-  await collection.insertOne({
-    user_id: userId,
-    name,
-    number
+
+async function showMenuDelete(ctx) {
+  const inlineKeyboard = new InlineKeyboard();
+  await ctx.api.sendChatAction(ctx.chat.id, 'typing');
+  // Mendapatkan daftar nomor pengguna dari koleksi "numbers"
+  const numbers = await readData(ctx.from.id)
+  numbers.forEach((option,index) => {
+    inlineKeyboard.text(option.name + ' - ' + option.phone, `/remove_${index}-${option.phone}`).row(); 
   });
+
+  await ctx.reply(`Pilih akun yang akan dihapus`, {
+    reply_markup: inlineKeyboard
+  })
 }
 
 async function showMenu(ctx) {
   const inlineKeyboard = new InlineKeyboard();
-
-  await ctx.api.sendChatAction(ctx.chat.id,
-    'typing');
-
-  const client = await MongoClient.connect(uri);
-  const db = client.db(dbName);
-
+  await ctx.api.sendChatAction(ctx.chat.id, 'typing');
   // Mendapatkan daftar nomor pengguna dari koleksi "numbers"
-  const numbers = await getNumbers(db,
-    ctx.from.id);
+  const numbers = await readData(ctx.from.id)
   numbers.forEach((option) => {
-    inlineKeyboard.text(option.name, '/number_'+option.number).row(); // Menambahkan tombol dengan teks dan nilai yang sama
+    inlineKeyboard.text(option.name, '/number_'+option.phone).row(); // Menambahkan tombol dengan teks dan nilai yang sama
   });
-  inlineKeyboard.text('➕ Tambah ',
-    'tambah')
-  inlineKeyboard.text('❌  Hapus ',
-    'hapus')
+  inlineKeyboard.text('➕ Tambah ', 'tambah')
+  inlineKeyboard.text('❌  Hapus ', 'hapus')
   let list = ''
 
   numbers.map((number, i) => {
-    list += `${i+1}. ${number.name} - ${number.number}\n`
+    list += `${i+1}. ${number.name} - ${number.phone}\n`
   })
 
-  await ctx.reply(`ID : ${ctx.from.id}\n\nDaftar Nomor Tersimpan: \n${list}`,
-    {
-      reply_markup: inlineKeyboard
-    })
+  await ctx.reply(`ID : ${ctx.from.id}\n\nDaftar Nomor Tersimpan: \n${list}`, {
+    reply_markup: inlineKeyboard
+  })
 }
 
 
