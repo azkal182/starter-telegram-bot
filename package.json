@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cpy \"src/**/*.js\" dist && cpy \"src/**/*.token\" dist",
     "start": "node dist/bot.js",
     "dev": "env-cmd ts-node-dev src/bot.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,6 +10,7 @@
     "@types/lodash": "^4.14.188",
     "@types/node": "^18.11.7",
     "@types/node-fetch": "^2.6.2",
+    "cpy-cli": "^4.2.0",
     "env-cmd": "^10.1.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^4.8.4"
