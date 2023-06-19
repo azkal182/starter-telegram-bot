@@ -137,13 +137,14 @@ async function cek_kuota_data(nomer) {
   if (nomer.startsWith("62")) {
     // Nomor telepon sudah dalam format internasional, tidak perlu diubah
     nomer_hp = nomer
-  } else if (input.startsWith("08")) {
+  } else if (nomer.startsWith("08")) {
     // Ubah nomor telepon dari format lokal ke format internasional
     nomer_hp = nomer.replace(/^08/, "62");
   } else {
     console.log('nomor hp tidak valid')
     nomer_hp = nomor
   }
+  
   console.log(`Cek kuota ${nomer_hp}...`);
   //const tokenData = JSON.parse(fs.readFileSync('./xl.token'));
   const tokenData = await readSession();

@@ -31,7 +31,7 @@ async function addData(userId, newData) {
 async function removeData(userId, index) {
   const redis = new Redis("redis://default:5bUYu9Ekqu396XYeGjlaVPlPZn69DCSm@redis-13283.c292.ap-southeast-1-1.ec2.cloud.redislabs.com:13283");
 
-try {
+  try {
     const key = `data_${userId}`;
     const currentData = await redis.get(key);
     let parsedData = [];
@@ -85,4 +85,8 @@ async function readData(userId) {
 // Menghapus data pada index tertentu (misalnya index ke-0)
 
 //removeData(userId, 0)
-module.exports = {readData, addData, removeData}
+module.exports = {
+  readData,
+  addData,
+  removeData
+}

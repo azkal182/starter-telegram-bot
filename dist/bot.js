@@ -79,7 +79,9 @@ function addAccount(conversation, ctx) {
                     //@ts-ignore
                     ctx.session.num = num.message.text;
                     // Simpan name dan number ke dalam database berdasarkan ID user
-                    return [4 /*yield*/, (0, redis_js_1.addData)(ctx.from.id, { name: name.message.text, phone: num.message.text.replace(/[^\d]/g, '') })];
+                    return [4 /*yield*/, (0, redis_js_1.addData)(ctx.from.id, {
+                            name: name.message.text, phone: num.message.text.replace(/[^\d]/g, '')
+                        })];
                 case 5:
                     // Simpan name dan number ke dalam database berdasarkan ID user
                     _a.sent();
@@ -161,7 +163,9 @@ bot.callbackQuery(/^\/remove_(.*)$/, function (ctx) { return __awaiter(void 0, v
                 _a.sent();
                 console.log('index = ', index);
                 console.log('phone = ', phone);
-                ctx.reply("Apakah anda yakin akan menghapus akun dengan nomor - ".concat(phone), { reply_markup: inlineKeyboard });
+                ctx.reply("Apakah anda yakin akan menghapus akun dengan nomor - ".concat(phone), {
+                    reply_markup: inlineKeyboard
+                });
                 return [2 /*return*/];
         }
     });
@@ -245,8 +249,7 @@ bot.callbackQuery(/^\/number_(.*)$/, function (ctx) { return __awaiter(void 0, v
     });
 }); });
 // Suggest commands in the menu
-bot.api.setMyCommands([
-    {
+bot.api.setMyCommands([{
         command: "menu",
         description: "show menu"
     },
@@ -266,8 +269,9 @@ bot.command("menu", function (ctx) { return __awaiter(void 0, void 0, void 0, fu
 bot.command("setMenu", function (ctx) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, bot.api.setMyCommands([
-                    { command: "yo", description: "Be greeted by the bot" },
+            case 0: return [4 /*yield*/, bot.api.setMyCommands([{
+                        command: "yo", description: "Be greeted by the bot"
+                    },
                     {
                         command: "effect",
                         description: "Apply text effects on the text. (usage: /effect [text])"
@@ -322,15 +326,19 @@ function showMenu(ctx) {
                     return [4 /*yield*/, (0, redis_js_1.readData)(ctx.from.id)];
                 case 2:
                     numbers = _a.sent();
-                    numbers.forEach(function (option) {
-                        inlineKeyboard.text(option.name.toUpperCase(), '/number_' + option.phone).row(); // Menambahkan tombol dengan teks dan nilai yang sama
-                    });
+                    if (numbers) {
+                        numbers.forEach(function (option) {
+                            inlineKeyboard.text(option.name.toUpperCase(), '/number_' + option.phone).row(); // Menambahkan tombol dengan teks dan nilai yang sama
+                        });
+                    }
                     inlineKeyboard.text('➕ Tambah ', 'tambah');
                     inlineKeyboard.text('❌  Hapus ', 'hapus');
                     list = '';
-                    numbers.map(function (number, i) {
-                        list += "".concat(i + 1, ". ").concat(number.name, " - ").concat(number.phone, "\n");
-                    });
+                    if (numbers) {
+                        numbers.map(function (number, i) {
+                            list += "".concat(i + 1, ". ").concat(number.name.toUpperCase(), " - ").concat(number.phone, "\n");
+                        });
+                    }
                     return [4 /*yield*/, ctx.reply("ID : ".concat(ctx.from.id, "\n\nDaftar Nomor Tersimpan: \n").concat(list), {
                             reply_markup: inlineKeyboard
                         })];
