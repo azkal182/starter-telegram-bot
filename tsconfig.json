@@ -6,6 +6,6 @@
    "outDir": "./dist",
     "rootDir": "./src"
   },
-  "include": ["src/**/*", "environment.d.ts"],
+  "include": ["src/**/*", "environment.d.ts","src/**/*.js"],
   "exclude": ["node_modules"]
 }

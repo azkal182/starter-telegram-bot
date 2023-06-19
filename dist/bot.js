@@ -149,12 +149,15 @@ bot.callbackQuery(/^\/remove_(.*)$/, function (ctx) { return __awaiter(void 0, v
             case 0: return [4 /*yield*/, ctx.deleteMessage()];
             case 1:
                 _a.sent();
+                return [4 /*yield*/, ctx.api.sendChatAction(ctx.chat.id, 'typing')];
+            case 2:
+                _a.sent();
                 message = ctx.match[1].split('-');
                 index = message[0];
                 phone = message[1];
                 inlineKeyboard = new grammy_1.InlineKeyboard().text('Hapus', "/confirm_".concat(index)).text('Batal', "/batal");
                 return [4 /*yield*/, ctx.api.sendChatAction(ctx.chat.id, 'typing')];
-            case 2:
+            case 3:
                 _a.sent();
                 console.log('index = ', index);
                 console.log('phone = ', phone);
@@ -174,26 +177,29 @@ bot.callbackQuery(/^\/confirm_(.*)$/, function (ctx) { return __awaiter(void 0, 
                 return [4 /*yield*/, ctx.deleteMessage()];
             case 1:
                 _a.sent();
-                _a.label = 2;
+                return [4 /*yield*/, ctx.api.sendChatAction(ctx.chat.id, 'typing')];
             case 2:
-                _a.trys.push([2, 6, , 8]);
-                return [4 /*yield*/, (0, redis_js_1.removeData)(ctx.from.id, index)];
-            case 3:
                 _a.sent();
-                return [4 /*yield*/, ctx.reply('Akun berhasil dihapus')];
+                _a.label = 3;
+            case 3:
+                _a.trys.push([3, 7, , 9]);
+                return [4 /*yield*/, (0, redis_js_1.removeData)(ctx.from.id, index)];
             case 4:
                 _a.sent();
-                return [4 /*yield*/, showMenu(ctx)];
+                return [4 /*yield*/, ctx.reply('Akun berhasil dihapus')];
             case 5:
                 _a.sent();
-                return [3 /*break*/, 8];
+                return [4 /*yield*/, showMenu(ctx)];
             case 6:
+                _a.sent();
+                return [3 /*break*/, 9];
+            case 7:
                 err_1 = _a.sent();
                 return [4 /*yield*/, ctx.reply('Gagal menghapus Akun!')];
-            case 7:
+            case 8:
                 _a.sent();
-                return [3 /*break*/, 8];
-            case 8: return [2 /*return*/];
+                return [3 /*break*/, 9];
+            case 9: return [2 /*return*/];
         }
     });
 }); });
@@ -214,35 +220,32 @@ bot.callbackQuery(/^\/number_(.*)$/, function (ctx) { return __awaiter(void 0, v
     var number, data;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0:
+            case 0: return [4 /*yield*/, ctx.api.sendChatAction(ctx.chat.id, 'typing')];
+            case 1:
+                _a.sent();
                 number = ctx.match[1];
                 return [4 /*yield*/, (0, dompul_js_1["default"])(number)];
-            case 1:
+            case 2:
                 data = _a.sent();
                 return [4 /*yield*/, ctx.deleteMessage()];
-            case 2:
-                _a.sent();
-                if (!data.packageInfo) return [3 /*break*/, 4];
-                console.log(data);
-                return [4 /*yield*/, sendResultToUser(ctx, data.packageInfo)];
             case 3:
                 _a.sent();
-                return [3 /*break*/, 6];
-            case 4: return [4 /*yield*/, ctx.reply(data)];
-            case 5:
+                if (!data.packageInfo) return [3 /*break*/, 5];
+                console.log(data);
+                return [4 /*yield*/, sendResultToUser(ctx, data.packageInfo)];
+            case 4:
                 _a.sent();
-                _a.label = 6;
-            case 6: return [2 /*return*/];
+                return [3 /*break*/, 7];
+            case 5: return [4 /*yield*/, ctx.reply(data)];
+            case 6:
+                _a.sent();
+                _a.label = 7;
+            case 7: return [2 /*return*/];
         }
     });
 }); });
 // Suggest commands in the menu
 bot.api.setMyCommands([
-    { command: "yo", description: "Be greeted by the bot" },
-    {
-        command: "effect",
-        description: "Apply text effects on the text. (usage: /effect [text])"
-    },
     {
         command: "menu",
         description: "show menu"
@@ -294,7 +297,7 @@ function showMenuDelete(ctx) {
                 case 2:
                     numbers = _a.sent();
                     numbers.forEach(function (option, index) {
-                        inlineKeyboard.text(option.name + ' - ' + option.phone, "/remove_".concat(index, "-").concat(option.phone)).row();
+                        inlineKeyboard.text(option.name.toUpperCase() + ' - ' + option.phone, "/remove_".concat(index, "-").concat(option.phone)).row();
                     });
                     return [4 /*yield*/, ctx.reply("Pilih akun yang akan dihapus", {
                             reply_markup: inlineKeyboard
@@ -320,7 +323,7 @@ function showMenu(ctx) {
                 case 2:
                     numbers = _a.sent();
                     numbers.forEach(function (option) {
-                        inlineKeyboard.text(option.name, '/number_' + option.phone).row(); // Menambahkan tombol dengan teks dan nilai yang sama
+                        inlineKeyboard.text(option.name.toUpperCase(), '/number_' + option.phone).row(); // Menambahkan tombol dengan teks dan nilai yang sama
                     });
                     inlineKeyboard.text('➕ Tambah ', 'tambah');
                     inlineKeyboard.text('❌  Hapus ', 'hapus');
@@ -341,6 +344,7 @@ function showMenu(ctx) {
 function sendResultToUser(ctx, data) {
     // Ubah format hasil menjadi pesan yang dapat dikirim ke pengguna
     var message = '';
+    message += "ID : ".concat(ctx.from.id, "\n\n");
     message += 'info Paket Aktif\n';
     data.forEach(function (item, index, arr) {
         var name = item[0].packages.name;

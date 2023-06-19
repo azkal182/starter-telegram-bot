@@ -1,5 +1,6 @@
 //const fetch = require('node-fetch');
 const fs = require('fs');
+const Redis = require('ioredis');
 
 const login_email = 'mohazkalarif96@gmail.com';
 const file_output = './xl.json';
@@ -52,7 +53,9 @@ async function send_otp() {
       accessToken: accessToken,
       refreshToken: refreshToken
     };
-    fs.writeFileSync('./xl.token', JSON.stringify(tokenData));
+    //fs.writeFileSync('./xl.token', JSON.stringify(tokenData));
+    await saveSession(tokenData)
+
     console.log('OTP Verified...');
     console.log(`Access Token: ${accessToken}`);
     console.log(`Refresh Token: ${refreshToken}`);
@@ -79,12 +82,13 @@ function getInput(question) {
 }
 
 async function refresh_token() {
-  if (fs.existsSync('./xl.token')) {
-    const tokenData = JSON.parse(fs.readFileSync('./xl.token'));
-    const emailToken = tokenData.emailToken;
+  const token = await readSession()
+  if (token) {
+    //const tokenData = JSON.parse(fs.readFileSync('./xl.token'));
+    const emailToken = token.emailToken;
     if (login_email === emailToken) {
       console.log('Refreshing token...');
-      const refreshToken = tokenData.refreshToken;
+      const refreshToken = token.refreshToken;
       const response = await fetch('https://srg-txl-login-controller-service.ext.dp.xl.co.id/v1/login/token/refresh', {
         method: 'POST',
         headers: {
@@ -108,7 +112,8 @@ async function refresh_token() {
           accessToken: accessToken,
           refreshToken: refreshToken
         };
-        fs.writeFileSync('./xl.token', JSON.stringify(newTokenData));
+        await saveSession(newTokenData)
+        //fs.writeFileSync('./xl.token', JSON.stringify(newTokenData));
         console.log('Token refreshed');
       } else {
         console.log('Failed to refresh the token');
@@ -126,21 +131,23 @@ async function refresh_token() {
     await send_otp();
   }
 }
+
 async function cek_kuota_data(nomer) {
- let nomer_hp = nomer
-if (nomer.startsWith("62")) {
+  let nomer_hp = nomer
+  if (nomer.startsWith("62")) {
     // Nomor telepon sudah dalam format internasional, tidak perlu diubah
     nomer_hp = nomer
   } else if (input.startsWith("08")) {
     // Ubah nomor telepon dari format lokal ke format internasional
-    nomer_hp =  nomer.replace(/^08/, "62");
+    nomer_hp = nomer.replace(/^08/, "62");
   } else {
     console.log('nomor hp tidak valid')
-    nomer_hp = nomor 
+    nomer_hp = nomor
   }
- console.log(`Cek kuota ${nomer_hp}...`);
- const tokenData = JSON.parse(fs.readFileSync('./xl.token'));
- const accessToken = tokenData.accessToken;
+  console.log(`Cek kuota ${nomer_hp}...`);
+  //const tokenData = JSON.parse(fs.readFileSync('./xl.token'));
+  const tokenData = await readSession();
+  const accessToken = tokenData.accessToken;
   const response = await fetch(`https://srg-txl-utility-service.ext.dp.xl.co.id/v2/package/check/${nomer_hp}`, {
     method: 'GET',
     headers: {
@@ -155,9 +162,10 @@ if (nomer.startsWith("62")) {
   const data = await response.json();
   const statusCode = data.statusCode;
   if (statusCode === 200) {
+    console.log(JSON.stringify(data,null,2))
     const packageData = data.result.data;
     //const formattedData = packageData.map(item => `${item.NAME}: ${item.VALUE}`).join('\n').replace(/NAME/g, '\nNAME') + '\n\n=====PRESS "q" TO EXIT=====';
-  //  console.log(JSON.stringify(packageData));
+    //  console.log(JSON.stringify(packageData));
     return packageData
   } else {
     const statusDescription = data.statusDescription;
@@ -178,15 +186,57 @@ refresh_token().then(()=> {
 })
 */
 
-try {
-  await refresh_token()
-  
-  try{
-   return await cek_kuota_data(number)
-    }catch(err){console.log('error cek kuota : ' + err)}
-  
-}catch(err){console.log('error refresh token : ' + err)}
+  try {
+    await refresh_token()
+
+    try {
+      return await cek_kuota_data(number)
+    }catch(err) {
+      console.log('error cek kuota : ' + err)}
+
+  }catch(err) {
+    console.log('error refresh token : ' + err)}
 }
+
+
+async function saveSession(data) {
+  const redis = new Redis("redis://default:5bUYu9Ekqu396XYeGjlaVPlPZn69DCSm@redis-13283.c292.ap-southeast-1-1.ec2.cloud.redislabs.com:13283");
+
+  try {
+    const key = `sessions`;
+
+
+    await redis.set(key, JSON.stringify(data));
+    console.log('Session saved successfully');
+  } catch (error) {
+    console.error('Failed to save session:', error);
+  } finally {
+    redis.quit(); // Menutup koneksi Redis
+  }
+}
+
+async function readSession() {
+  const redis = new Redis("redis://default:5bUYu9Ekqu396XYeGjlaVPlPZn69DCSm@redis-13283.c292.ap-southeast-1-1.ec2.cloud.redislabs.com:13283");
+
+  try {
+    const key = `sessions`;
+    const currentData = await redis.get(key);
+
+    if (currentData) {
+      const parsedData = JSON.parse(currentData);
+      console.log(parsedData);
+      return parsedData
+    } else {
+      console.log('No session found');
+    }
+  } catch (error) {
+    console.error('Failed to read session:', error);
+  } finally {
+    redis.quit(); // Menutup koneksi Redis
+  }
+}
+
+
 module.exports = getData;
 //const test = getData('6287891276651')
 

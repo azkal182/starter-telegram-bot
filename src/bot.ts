@@ -76,6 +76,7 @@ bot.callbackQuery("hapus", async (ctx) =>{
 
 bot.callbackQuery(/^\/remove_(.*)$/, async (ctx) => {
   await ctx.deleteMessage()
+  await ctx.api.sendChatAction(ctx.chat.id, 'typing');
   const message = ctx.match[1].split('-')
   const index = message[0]
   const phone = message[1]
@@ -93,6 +94,7 @@ bot.callbackQuery(/^\/confirm_(.*)$/, async (ctx) => {
   console.log(ctx.from.id)
   console.log(index)
   await ctx.deleteMessage()
+  await ctx.api.sendChatAction(ctx.chat.id, 'typing');
   try {
     await removeData(ctx.from.id, index)
     await ctx.reply('Akun berhasil dihapus')
@@ -107,6 +109,7 @@ bot.callbackQuery('/batal', async (ctx)=>{
 })
 
 bot.callbackQuery(/^\/number_(.*)$/, async (ctx) => {
+  await ctx.api.sendChatAction(ctx.chat.id, 'typing');
   const number = ctx.match[1]
   const data = await getData(number)
   await ctx.deleteMessage()
@@ -123,11 +126,6 @@ bot.callbackQuery(/^\/number_(.*)$/, async (ctx) => {
 });
 // Suggest commands in the menu
 bot.api.setMyCommands([
-  { command: "yo", description: "Be greeted by the bot" },
-  {
-    command: "effect",
-    description: "Apply text effects on the text. (usage: /effect [text])",
-  },
     {
     command: "menu",
     description: "show menu",
@@ -169,8 +167,9 @@ async function showMenuDelete(ctx) {
   // Mendapatkan daftar nomor pengguna dari koleksi "numbers"
   const numbers = await readData(ctx.from.id)
   numbers.forEach((option,index) => {
-    inlineKeyboard.text(option.name + ' - ' + option.phone, `/remove_${index}-${option.phone}`).row(); 
+    inlineKeyboard.text(option.name.toUpperCase() + ' - ' + option.phone, `/remove_${index}-${option.phone}`).row(); 
   });
+  
 
   await ctx.reply(`Pilih akun yang akan dihapus`, {
     reply_markup: inlineKeyboard
@@ -183,7 +182,7 @@ async function showMenu(ctx) {
   // Mendapatkan daftar nomor pengguna dari koleksi "numbers"
   const numbers = await readData(ctx.from.id)
   numbers.forEach((option) => {
-    inlineKeyboard.text(option.name, '/number_'+option.phone).row(); // Menambahkan tombol dengan teks dan nilai yang sama
+    inlineKeyboard.text(option.name.toUpperCase(), '/number_'+option.phone).row(); // Menambahkan tombol dengan teks dan nilai yang sama
   });
   inlineKeyboard.text('➕ Tambah ', 'tambah')
   inlineKeyboard.text('❌  Hapus ', 'hapus')
@@ -202,6 +201,7 @@ async function showMenu(ctx) {
 function sendResultToUser(ctx, data) {
   // Ubah format hasil menjadi pesan yang dapat dikirim ke pengguna
   let message = '';
+  message += `ID : ${ctx.from.id}\n\n`
   message += 'info Paket Aktif\n'
 
   data.forEach((item,
@@ -221,6 +221,7 @@ function sendResultToUser(ctx, data) {
         message += "\n" // Menambahkan jarak dengan \n
       }
     });
+ 
 
     if (index !== arr.length - 1) {
       message += "\n" // Menambahkan jarak dengan \n
