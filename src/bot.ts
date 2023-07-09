@@ -266,11 +266,12 @@ if (process.env.NODE_ENV === "production") {
   // Use Webhooks for the production server
   const app = express();
   app.use(express.json());
-  app.use(webhookCallback(bot, "express"));
-  app.get('/refresh', async (req:any, res:any) => {
+    app.get('/refresh', async (req:any, res:any) => {
     await refresh_token
     res.json({message: 'refresh token successfully'})
   })
+  app.use(webhookCallback(bot, "express"));
+
 
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
