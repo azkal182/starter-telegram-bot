@@ -241,7 +241,7 @@ async function readSession() {
 }
 
 
-export {getData}
+export {getData,refresh_token}
 //const test = getData('6287891276651')
 
 //console.log(test)

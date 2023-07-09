@@ -6,7 +6,7 @@ import {
   Context
 } from "grammy";
 //import getData from './dompul';
-import {getData} from './dompul'
+import {getData,refresh_token} from './dompul'
 import {
   type Conversation,
   type ConversationFlavor,
@@ -267,6 +267,10 @@ if (process.env.NODE_ENV === "production") {
   const app = express();
   app.use(express.json());
   app.use(webhookCallback(bot, "express"));
+  app.get('/refresh', async (req:any, res:any) => {
+    await refresh_token
+    res.json({message: 'refresh token successfully'})
+  })
 
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {

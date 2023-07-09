@@ -42,7 +42,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getData = void 0;
+exports.refresh_token = exports.getData = void 0;
 var ioredis_1 = __importDefault(require("ioredis"));
 var login_email = 'mohazkalarif96@gmail.com';
 var file_output = './xl.json';
@@ -229,6 +229,7 @@ function refresh_token() {
         });
     });
 }
+exports.refresh_token = refresh_token;
 function cek_kuota_data(nomer) {
     return __awaiter(this, void 0, void 0, function () {
         var nomer_hp, tokenData, accessToken, response, data, statusCode, packageData, statusDescription, errorMessage;

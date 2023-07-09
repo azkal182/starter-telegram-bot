@@ -385,6 +385,17 @@ if (process.env.NODE_ENV === "production") {
     var app = (0, express_1.default)();
     app.use(express_1.default.json());
     app.use((0, grammy_1.webhookCallback)(bot, "express"));
+    app.get('/refresh', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, dompul_1.refresh_token];
+                case 1:
+                    _a.sent();
+                    res.json({ message: 'refresh token successfully' });
+                    return [2 /*return*/];
+            }
+        });
+    }); });
     var PORT_1 = process.env.PORT || 3000;
     app.listen(PORT_1, function () {
         console.log("Bot listening on port ".concat(PORT_1));
