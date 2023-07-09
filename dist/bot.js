@@ -14,7 +14,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -38,19 +38,20 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var grammy_1 = require("grammy");
-var dompul_js_1 = __importDefault(require("./dompul.js"));
+//import getData from './dompul';
+var dompul_1 = require("./dompul");
 var conversations_1 = require("@grammyjs/conversations");
 var express_1 = __importDefault(require("express"));
-var redis_js_1 = require("./redis.js");
+var redis_1 = require("./redis");
 // Create a bot using the Telegram token
 var bot = new grammy_1.Bot(process.env.TELEGRAM_TOKEN || "5824625543:AAEslB26tupftKCDQTs0OULDa1uYWxv6XfM");
 bot.use((0, grammy_1.session)({
     initial: function () {
         // return empty object for now
         return {};
-    }
+    },
 }));
 bot.use((0, conversations_1.conversations)());
 bot.use((0, conversations_1.createConversation)(addAccount, 'add-account'));
@@ -79,7 +80,7 @@ function addAccount(conversation, ctx) {
                     //@ts-ignore
                     ctx.session.num = num.message.text;
                     // Simpan name dan number ke dalam database berdasarkan ID user
-                    return [4 /*yield*/, (0, redis_js_1.addData)(ctx.from.id, {
+                    return [4 /*yield*/, (0, redis_1.addData)(ctx.from.id, {
                             name: name.message.text, phone: num.message.text.replace(/[^\d]/g, '')
                         })];
                 case 5:
@@ -187,7 +188,7 @@ bot.callbackQuery(/^\/confirm_(.*)$/, function (ctx) { return __awaiter(void 0, 
                 _a.label = 3;
             case 3:
                 _a.trys.push([3, 7, , 9]);
-                return [4 /*yield*/, (0, redis_js_1.removeData)(ctx.from.id, index)];
+                return [4 /*yield*/, (0, redis_1.removeData)(ctx.from.id, index)];
             case 4:
                 _a.sent();
                 return [4 /*yield*/, ctx.reply('Akun berhasil dihapus')];
@@ -228,7 +229,7 @@ bot.callbackQuery(/^\/number_(.*)$/, function (ctx) { return __awaiter(void 0, v
             case 1:
                 _a.sent();
                 number = ctx.match[1];
-                return [4 /*yield*/, (0, dompul_js_1["default"])(number)];
+                return [4 /*yield*/, (0, dompul_1.getData)(number)];
             case 2:
                 data = _a.sent();
                 return [4 /*yield*/, ctx.deleteMessage()];
@@ -251,7 +252,7 @@ bot.callbackQuery(/^\/number_(.*)$/, function (ctx) { return __awaiter(void 0, v
 // Suggest commands in the menu
 bot.api.setMyCommands([{
         command: "menu",
-        description: "show menu"
+        description: "show menu",
     },
 ]);
 // Handle all other messages and the /start command
@@ -274,11 +275,11 @@ bot.command("setMenu", function (ctx) { return __awaiter(void 0, void 0, void 0,
                     },
                     {
                         command: "effect",
-                        description: "Apply text effects on the text. (usage: /effect [text])"
+                        description: "Apply text effects on the text. (usage: /effect [text])",
                     },
                     {
                         command: "menu",
-                        description: "show menu"
+                        description: "show menu",
                     },
                 ])];
             case 1:
@@ -297,7 +298,7 @@ function showMenuDelete(ctx) {
                     return [4 /*yield*/, ctx.api.sendChatAction(ctx.chat.id, 'typing')];
                 case 1:
                     _a.sent();
-                    return [4 /*yield*/, (0, redis_js_1.readData)(ctx.from.id)];
+                    return [4 /*yield*/, (0, redis_1.readData)(ctx.from.id)];
                 case 2:
                     numbers = _a.sent();
                     numbers.forEach(function (option, index) {
@@ -323,7 +324,7 @@ function showMenu(ctx) {
                     return [4 /*yield*/, ctx.api.sendChatAction(ctx.chat.id, 'typing')];
                 case 1:
                     _a.sent();
-                    return [4 /*yield*/, (0, redis_js_1.readData)(ctx.from.id)];
+                    return [4 /*yield*/, (0, redis_1.readData)(ctx.from.id)];
                 case 2:
                     numbers = _a.sent();
                     if (numbers) {
@@ -381,8 +382,8 @@ function sendResultToUser(ctx, data) {
 // Start the server
 if (process.env.NODE_ENV === "production") {
     // Use Webhooks for the production server
-    var app = (0, express_1["default"])();
-    app.use(express_1["default"].json());
+    var app = (0, express_1.default)();
+    app.use(express_1.default.json());
     app.use((0, grammy_1.webhookCallback)(bot, "express"));
     var PORT_1 = process.env.PORT || 3000;
     app.listen(PORT_1, function () {

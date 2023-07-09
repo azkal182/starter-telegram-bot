@@ -1,5 +1,5 @@
-const Redis = require('ioredis');
-
+//const Redis = require('ioredis');
+import Redis from 'ioredis'
 // Membuat koneksi Redis
 
 
@@ -85,7 +85,7 @@ async function readData(userId) {
 // Menghapus data pada index tertentu (misalnya index ke-0)
 
 //removeData(userId, 0)
-module.exports = {
+export {
   readData,
   addData,
   removeData

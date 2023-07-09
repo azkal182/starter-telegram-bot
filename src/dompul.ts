@@ -1,6 +1,9 @@
 //const fetch = require('node-fetch');
-const fs = require('fs');
-const Redis = require('ioredis');
+//const fs = require('fs');
+//const Redis = require('ioredis');
+
+
+import Redis from 'ioredis'
 
 const login_email = 'mohazkalarif96@gmail.com';
 const file_output = './xl.json';
@@ -142,7 +145,7 @@ async function cek_kuota_data(nomer) {
     nomer_hp = nomer.replace(/^08/, "62");
   } else {
     console.log('nomor hp tidak valid')
-    nomer_hp = nomor
+    nomer_hp = nomer
   }
   
   console.log(`Cek kuota ${nomer_hp}...`);
@@ -238,7 +241,7 @@ async function readSession() {
 }
 
 
-module.exports = getData;
+export {getData}
 //const test = getData('6287891276651')
 
 //console.log(test)

@@ -5,7 +5,8 @@ import {
   session,
   Context
 } from "grammy";
-import getData from './dompul.js';
+//import getData from './dompul';
+import {getData} from './dompul'
 import {
   type Conversation,
   type ConversationFlavor,
@@ -21,7 +22,7 @@ import {
   readData,
   addData,
   removeData
-} from "./redis.js"
+} from "./redis"
 
 type MyContext = Context & ConversationFlavor;
 type MyConversation = Conversation < MyContext >;
