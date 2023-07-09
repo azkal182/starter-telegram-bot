@@ -1,5 +1,5 @@
 Arguments: 
-  /data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/usr/share/yarn/bin/yarn.js build
+  /data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/usr/bin/yarn build
 
 PATH: 
   /data/data/com.termux/files/usr/bin:/data/data/com.termux/files/home/.local/bin:/data/data/com.termux/files/usr/bin
@@ -8,23 +8,24 @@ Yarn version:
   1.22.19
 
 Node version: 
-  19.9.0
+  20.2.0
 
 Platform: 
   android arm64
 
 Trace: 
-  SyntaxError: /data/data/com.termux/files/home/starter-telegram-bot/package.json: Expected ',' or '}' after property value in JSON at position 53
+  SyntaxError: /data/data/com.termux/files/home/starter-telegram-bot/package.json: Unexpected token ' ', ..."  "build": "tsc",
+    "... is not valid JSON
       at JSON.parse (<anonymous>)
-      at /data/data/com.termux/files/usr/share/yarn/lib/cli.js:1629:59
+      at /data/data/com.termux/files/usr/lib/node_modules/yarn/lib/cli.js:1629:59
       at Generator.next (<anonymous>)
-      at step (/data/data/com.termux/files/usr/share/yarn/lib/cli.js:310:30)
-      at /data/data/com.termux/files/usr/share/yarn/lib/cli.js:321:13
+      at step (/data/data/com.termux/files/usr/lib/node_modules/yarn/lib/cli.js:310:30)
+      at /data/data/com.termux/files/usr/lib/node_modules/yarn/lib/cli.js:321:13
 
 npm manifest: 
   {
     "scripts": {
-  "build":"tsc --esModuleInterop"
+      "build": "tsc",
       "start": "node dist/bot.js",
       "dev": "env-cmd ts-node-dev src/bot.ts",
       "test": "echo \"Error: no test specified\" && exit 1"
@@ -37,10 +38,11 @@ npm manifest:
       "cpy-cli": "^4.2.0",
       "env-cmd": "^10.1.0",
       "ts-node-dev": "^2.0.0",
-      "typescript": "^4.8.4"
+      "typescript": "^5.1.6"
     },
     "dependencies": {
       "@grammyjs/conversations": "^1.1.2",
+      "@types/ioredis": "^5.0.0",
       "express": "^4.18.2",
       "grammy": "^1.11.2",
       "ioredis": "^5.3.2",
@@ -213,6 +215,13 @@ Lockfile:
       "@types/express-serve-static-core" "^4.17.18"
       "@types/qs" "*"
       "@types/serve-static" "*"
+  
+  "@types/ioredis@^5.0.0":
+    version "5.0.0"
+    resolved "https://registry.yarnpkg.com/@types/ioredis/-/ioredis-5.0.0.tgz#c1ea7e2f3e2c5a942a27cfee6f62ddcfb23fb3e7"
+    integrity sha512-zJbJ3FVE17CNl5KXzdeSPtdltc4tMT3TzC6fxQS0sQngkbFZ6h+0uTafsRqu+eSLIugf6Yb0Ea0SUuRr42Nk9g==
+    dependencies:
+      ioredis "*"
   
   "@types/lodash@^4.14.188":
     version "4.14.188"
@@ -919,7 +928,7 @@ Lockfile:
     resolved "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz"
     integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
   
-  ioredis@^5.3.2:
+  ioredis@*, ioredis@^5.3.2:
     version "5.3.2"
     resolved "https://registry.npmjs.org/ioredis/-/ioredis-5.3.2.tgz"
     integrity sha512-1DKMMzlIHM02eBBVOFQ1+AolGjs6+xEcM4PDL7NqOS6szq7H9jSaEkIUH6/a5Hl241LzW6JLSiAbNvTQjUupUA==
@@ -1684,10 +1693,10 @@ Lockfile:
       media-typer "0.3.0"
       mime-types "~2.1.24"
   
-  typescript@^4.8.4:
-    version "4.8.4"
-    resolved "https://registry.npmjs.org/typescript/-/typescript-4.8.4.tgz"
-    integrity sha512-QCh+85mCy+h0IGff8r5XWzOVSbBO+KfeYrMQh7NJ58QujwcE22u+NUSmUxqF+un70P9GXKxa2HCNiTTMJknyjQ==
+  typescript@^5.1.6:
+    version "5.1.6"
+    resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.1.6.tgz#02f8ac202b6dad2c0dd5e0913745b47a37998274"
+    integrity sha512-zaWCozRZ6DLEWAWFrVDz1H6FVXzUSfTy5FUMWsQlU8Ym5JP9eO4xkTIROFCQvhQf61z6O/G6ugw3SgAnvvm+HA==
   
   unpipe@1.0.0, unpipe@~1.0.0:
     version "1.0.0"
